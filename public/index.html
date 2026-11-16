@@ -271,11 +271,13 @@
                 cardsBox.innerHTML = '';
                 dataList.forEach(function(item) {
                     // แยกตัวแปรเก็บลิงก์รูปภาพให้ปลอดภัยสูงสุด
-                    var storeImage = item.imgUrl ? item.imgUrl : 'data:image/svg+xml;utf8,<svg xmlns="http://w3.org" width="100" height="100"><rect width="100" height="100" fill="%23cbd5e1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="8" fill="%2364748b">ไม่มีรูปภาพหน้าร้าน</text></svg>';
-                    var storeMap = item.mapUrl ? item.mapUrl : '';
+                    var imgBoxHtml = item.imgUrl 
+            ? '<div style="width:100%; height:160px; background-image: url(\'' + item.imgUrl + '\'); background-size: cover; background-position: center;"></div>'
+            : '<div style="width:100%; height:160px; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 0.85rem;">ไม่มีรูปภาพหน้าร้าน</div>';
+        var storeMap = item.mapUrl ? item.mapUrl : '';
 
-                    var cardHTML = '<div class="biz-card" style="overflow:hidden; display:flex; flex-direction:column; background:white; border-radius:0.75rem; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.1);">' +
-                        '<div style="width:100%; height:160px; background-color:#cbd5e1; background-image:url(' + storeImage + '); background-size:cover; background-position:center; background-repeat:no-repeat;"></div>' +
+        var cardHTML = '<div class="biz-card" style="overflow:hidden; display:flex; flex-direction:column; background:white; border:1px solid #e2e8f0; border-radius:0.75rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">' +
+            imgBoxHtml +
                         '<div style="padding:1.25rem; flex-grow:1; display:flex; flex-direction:column; justify-content:space-between;">' +
                             '<div>' +
                                 '<div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">' +
