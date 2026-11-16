@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // https://script.google.com/macros/s/AKfycbz-TN3kLWLNR20gHH3fnfTn2jcgecb-OkjWLq0phd5BQQj9uCgVu_T7Yy3ZfnB12KrC/exec
-const GOOGLE_SCRIPT_URL = 'https://google.com';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-TN3kLWLNR20gHH3fnfTn2jcgecb-OkjWLq0phd5BQQj9uCgVu_T7Yy3ZfnB12KrC/exec';
 
 const upload = multer({ dest: 'uploads/' });
 app.use(express.json());
