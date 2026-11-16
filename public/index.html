@@ -406,8 +406,8 @@
                         item.imgUrl = imgUrlVal;
                     }
                 } else {
-                    mockDatabase.push({
-                        id: Date.now(),
+                    // ส่งข้อมูลเพิ่มใหม่ไปยัง Google Sheets ผ่าน Server API
+                    var newPayload = {
                         status: statusVal,
                         statusText: statusTextVal,
                         licenseNo: document.getElementById('field-lic-no').value,
@@ -418,15 +418,17 @@
                         expireDate: document.getElementById('field-expire-date').value,
                         mapUrl: mapUrlVal,
                         imgUrl: imgUrlVal
-                    });
+                    };
+                    fetch('/api/businesses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+                        body: JSON.stringify(newPayload)
+                    }).then(function() { loadFromGoogleSheets(); });
                 }
-                localStorage.setItem('bizDatabase', JSON.stringify(mockDatabase));
-                updateDashboardStats();
-                renderBusinessCards(mockDatabase);
                 editorPopup.style.display = 'none';
             });
 
-            // 6. ฟังก์ชันจำกัดสิทธิ์โหมดคนนอกเปิดดูอย่างเดียว (Viewer Mode บังคับซ่อนเด็ดขาด)
+            // 6. ฟังก์ชันจำกัดสิทธิ์โหมดคนนอกเปิดดูอย่างเดียว (Viewer Mode)
             function applyViewMode() {
                 var urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('mode') === 'view' || window.location.href.indexOf('mode=view') !== -1) {
@@ -439,12 +441,24 @@
                 }
             }
 
-            // สั่งรันระบบสรุปผลและวาดการ์ดครั้งแรกสุดเมื่อเบราว์เซอร์พร้อมทำงาน
-            updateDashboardStats();
-            renderBusinessCards(mockDatabase);
-            applyViewMode();
+            // 7. ฟังก์ชันดึงข้อมูลจริงจาก Google Sheets
+            function loadFromGoogleSheets() {
+                fetch('/api/businesses')
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (Array.isArray(data)) {
+                            mockDatabase = data;
+                            updateDashboardStats();
+                            renderBusinessCards(mockDatabase);
+                            applyViewMode();
+                        }
+                    })
+                    .catch(function(err) { console.error('โหลดข้อมูลไม่สำเร็จ:', err); });
+            }
 
-            // ล็อกความปลอดภัยป้องกันปุ่มหลุดซ้ำซ้อนขณะทำการค้นหาข้อมูลคำค้นหา
+            // สั่งดึงข้อมูลจาก Google Sheets ทันทีที่เปิดหน้าเว็บ
+            loadFromGoogleSheets();
+
             var originalRender = renderBusinessCards;
             renderBusinessCards = function(dataList) {
                 originalRender(dataList);
