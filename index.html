@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบฐานข้อมูลผู้ประกอบกิจการตาม พรบ.การสาธารณสุข พ.ศ. 2535</title>
+    <style>
+        :root { --success: #22c55e; --warning: #eab308; --danger: #ef4444; --dark: #1e293b; --gray: #64748b; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+        body { background-color: #f1f5f9; color: var(--dark); padding-bottom: 3rem; }
+        .header-bg { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: white; padding: 2rem 5%; margin-bottom: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .search-box, .stats-grid, .modal-content { background: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--gray); margin-bottom: 0.5rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; outline: none; }
+        .btn-search, .btn-add, .btn-submit { background-color: #047857; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; }
+        .btn-add { background-color: #059669; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .stat-card { padding: 1rem; border-left: 6px solid var(--gray); }
+        .stat-card.normal { border-left-color: var(--success); }
+        .stat-card.warning { border-left-color: var(--warning); }
+        .stat-card.danger { border-left-color: var(--danger); }
+        .stat-value { font-size: 1.75rem; font-weight: 700; }
+        .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .biz-card { background: white; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: bold; }
+        .status-badge.normal { background: #dcfce7; color: #166534; }
+        .status-badge.warning { background: #fef9c3; color: #854d0e; }
+        .status-badge.danger { background: #fee2e2; color: #991b1b; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { width: 90%; max-width: 500px; margin-bottom: 0; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+        .btn-cancel { background: #e2e8f0; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; cursor: pointer; }
+        .btn-edit, .btn-delete { border: none; padding: 0.3rem 0.6rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: white; margin-top: 0.5rem; }
+        .btn-edit { background-color: var(--warning); margin-right: 0.25rem; }
+        .btn-delete { background-color: var(--danger); }
+        /* สไตล์สำหรับแถบสีเทาอ่อนท้ายการ์ด */
+        .card-footer { 
+            padding: 0.75rem 1.25rem; 
+            background: #f8fafc; 
+            border-top: 1px solid #e2e8f0; 
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center; 
+            font-size: 0.8rem; 
+            margin: 1rem -1.25rem -1.25rem -1.25rem;
+            border-radius: 0 0 0.75rem 0.75rem;
+            color: var(--gray);
+        }
+        /* สไตล์สำหรับข้อความลิงก์สีฟ้า */
+        .btn-link { 
+            color: #0284c7; 
+            text-decoration: none; 
+            font-weight: 600; 
+        }/* สไตล์สำหรับกล่องข้อมูลติดต่อท้ายเว็บ */
+        .footer-info { 
+            background: white; 
+            padding: 1.5rem; 
+            border-radius: 0.75rem; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            margin-top: 2.5rem; 
+        }
+        .footer-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 1.5rem; 
+            font-size: 0.9rem; 
+        }
+        .footer-item h4 { 
+            color: #1e3a8a; 
+            margin-bottom: 0.5rem; 
+            font-weight: 700; 
+        }
+        .footer-item p { 
+            color: #4b5563; 
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bg">
+        <div style="display: flex; align-items: center; gap: 1.5rem; max-width: 1200px; margin: 0 auto;">
+            <!-- ส่วนรูปตราหน่วยงาน -->
+            <img src="/logo.png" alt="ตราหน่วยงาน" style="width: 75px; height: 75px; object-fit: contain; background: white; padding: 4px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div>
+                 <h1>ระบบฐานข้อมูลผู้ประกอบกิจการตาม พรบ.การสาธารณสุข พ.ศ. 2535</h1>
+                <!-- ปรับขนาดชื่อ อบต. ให้ใหญ่ขึ้นและหนาขึ้นเด่นๆ -->
+                <p style="color: #93c5fd; font-size: 1.2rem; font-weight: 600; margin-top: 0.25rem;">อบต.เขาดิน อำเภอบางปะกง จังหวัดฉะเชิงเทรา</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-box">
+            <div class="search-grid">
+                <div class="form-group"><label>พิมพ์คำค้นหา</label><input type="text" id="main-search-input" placeholder="ชื่อร้าน / ผู้ประกอบการ..."></div>
+                <div class="form-group">
+                    <label>พื้นที่ (หมู่บ้าน)</label>
+                    <select id="main-village-select">
+                        <option value="">-- ทั้งหมด --</option>
+                        <option value="1">หมู่ที่ 1</option>
+                        <option value="2">หมู่ที่ 2</option>
+                        <option value="3">หมู่ที่ 3</option>
+                        <option value="4">หมู่ที่ 4</option>
+                        <option value="5">หมู่ที่ 5</option>
+                        <option value="5">หมู่ที่ 6</option>
+                        <option value="5">หมู่ที่ 7</option>
+                    </select>
+                </div>
+                <!-- 👇 นำโค้ดชุดใหม่มาวางตรงนี้ครับ 👇 -->
+            <div class="form-group">
+                <label>ประเภทใบอนุญาต / หนังสือรับรอง</label>
+                <select id="main-doc-category-select">
+                    <option value="">-- ทุกประเภทเอกสาร --</option>
+                    <option value="ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ">ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ</option>
+                    <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร</option>
+                    <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร</option>
+                </select>
+            </div>
+                <button class="btn-search" id="btn-search-trigger">🔍 ค้นหาข้อมูล</button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card normal"><div>ใบอนุญาตปกติ</div><div class="stat-value" id="stat-normal-val" style="color:var(--success)">0 ราย</div></div>
+            <div class="stat-card warning"><div>ใกล้หมดอายุ</div><div class="stat-value" id="stat-warning-val" style="color:var(--warning)">0 ราย</div></div>
+            <div class="stat-card danger"><div>หมดอายุแล้ว</div><div class="stat-value" id="stat-danger-val" style="color:var(--danger)">0 ราย</div></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 2rem 0 1rem 0;">
+            <h3>📋 รายชื่อสถานประกอบการล่าสุด</h3>
+            <button class="btn-add" id="btn-trigger-add">+ เพิ่มผู้ประกอบการใหม่</button>
+        </div>
+
+        <div class="grid-cards" id="cards-list-box"></div>
+        <!-- ส่วนแสดงข้อมูลติดต่อ อบต.เขาดิน ด้านล่างสุด -->
+        <div class="footer-info">
+            <div class="footer-grid">
+                <div class="footer-item">
+                    <h4>📍 ที่อยู่หน่วยงาน</h4>
+                    <p>องค์การบริหารส่วนตำบลเขาดิน<br>อำเภอบางปะกง จังหวัดฉะเชิงเทรา 24130</p>
+                </div>
+                <div class="footer-item">
+                    <h4>🏢 หน่วยงานรับผิดชอบ</h4>
+                    <p>งานสาธารณสุข สำนักปลัด<br>องค์การบริหารส่วนตำบลเขาดิน</p>
+                </div>
+                <div class="footer-item">
+                    <h4>📞 ช่องทางติดต่อ</h4>
+                    <p>โทรศัพท์สำนักงาน: 038-134025<br>สายด่วนร้องเรียน: 038-134025</p>
+                </div>
+                <div class="footer-item">
+                    <h4>⏰ เวลาทำการ</h4>
+                    <p>วันจันทร์ - วันศุกร์<br>เวลา 08:30 น. - 16:30 น. (เว้นวันหยุดราชการ)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. ป๊อปอัปฟอร์มเพิ่ม/แก้ไขข้อมูล (เพิ่มช่องแผนที่และรูปภาพ) -->
+    <div class="modal-overlay" id="data-editor-popup">
+        <div class="modal-content">
+            <h3 id="editor-title-text" style="margin-bottom:1rem">➕ เพิ่มข้อมูลผู้ประกอบการใหม่</h3>
+            <form id="editor-data-form">
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                <label>ประเภทใบอนุญาต / หนังสือรับรอง</label>
+                <select id="field-doc-category">
+                    <option value="ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ">ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ</option>
+                    <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร</option>
+                    <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร</option>
+                </select>
+            </div>
+                <div class="form-group" style="margin-bottom:0.75rem">
+                    <label>สถานะใบอนุญาต</label>
+                    <select id="field-status">
+                        <option value="normal">ใบอนุญาตปกติ</option>
+                        <option value="warning">ใกล้หมดอายุ</option>
+                        <option value="danger">หมดอายุแล้ว</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>เลขที่ใบอนุญาต</label><input type="text" id="field-lic-no" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ชื่อสถานประกอบการ</label><input type="text" id="field-biz-name" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ผู้ดำเนินกิจการ</label><input type="text" id="field-owner-name" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ประเภทกิจการ</label><input type="text" id="field-type" placeholder="เช่น อู่ซ่อมรถ, โรงสีข้าว" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ที่ตั้ง (รายละเอียด/หมู่ที่)</label><input type="text" id="field-address" placeholder="เช่น 45/1 หมู่ 2 ตำบลเขาดิน" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>วันหมดอายุใบอนุญาต</label><input type="text" id="field-expire-date" placeholder="เช่น 31 ธ.ค. 2570" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>🔗 ลิงก์พิกัดแผนที่ (Google Maps URL)</label><input type="text" id="field-map-url" placeholder="เช่น https://goo.gl..."></div>
+                <div class="form-group" style="margin-bottom:1rem"><label>📸 ลิงก์รูปภาพหน้าร้าน (URL รูปภาพ)</label><input type="text" id="field-img-url" placeholder="วางลิงก์รูปภาพหน้าร้าน"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btn-cancel-editor">ยกเลิก</button>
+                    <button type="submit" class="btn-submit">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. ป๊อปอัปแสดงรายละเอียดสถานประกอบการ -->
+    <div class="modal-overlay" id="view-details-popup">
+        <div class="modal-content" style="max-width: 550px; background: white; padding: 1.5rem; border-radius: 0.75rem;">
+            <h3 style="margin-bottom: 1.25rem; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">🔍 รายละเอียดสถานประกอบการ</h3>
+            <div id="view-details-content" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; font-size: 0.95rem; margin-bottom: 1.5rem; text-align: left; line-height: 1.6;">
+                <!-- ข้อมูลจะถูกเขียนด้วย JavaScript -->
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button type="button" class="btn-cancel" id="btn-close-view" style="background-color: #1e293b; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600;">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup ฟอร์มเพิ่ม/แก้ไขข้อมูล -->
+    <div class="modal-overlay" id="<h4>⏰ เวลาทำการ</h4>data-editor-popup">
+        <div class="modal-content">
+            <h3 id="editor-title-text" style="margin-bottom:1rem">➕ เพิ่มข้อมูลผู้ประกอบการใหม่</h3>
+            <form id="editor-data-form">
+                <div class="form-group" style="margin-bottom:0.75rem">
+                    <div class="form-group">
+    <label>ประเภทใบอนุญาต / หนังสือรับรอง</label>
+    <select id="field-doc-category">
+        <option value="ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ">ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ</option>
+        <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร</option>
+        <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร</option>
+    </select>
+</div>
+                    <label>สถานะใบอนุญาต</label>
+                    <select id="field-status">
+                        <option value="normal">ใบอนุญาตปกติ</option>
+                        <option value="warning">ใกล้หมดอายุ</option>
+                        <option value="danger">หมดอายุแล้ว</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>เลขที่ใบอนุญาต</label><input type="text" id="field-lic-no" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ชื่อสถานประกอบการ</label><input type="text" id="field-biz-name" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ผู้ดำเนินกิจการ</label><input type="text" id="field-owner-name" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ประเภทกิจการ</label><input type="text" id="field-type" placeholder="เช่น อู่ซ่อมรถ, โรงสีข้าว" required></div>
+                <div class="form-group" style="margin-bottom:0.75rem"><label>ที่ตั้ง (รายละเอียด/หมู่ที่)</label><input type="text" id="field-address" placeholder="เช่น 45/1 หมู่ 2 ตำบลเขาดิน" required></div>
+                <div class="form-group" style="margin-bottom:1rem"><label>วันหมดอายุใบอนุญาต</label><input type="text" id="field-expire-date" placeholder="เช่น 31 ธ.ค. 2570" required></div>
+                <div class="form-group" style="margin-bottom:1rem">
+                    <label>🔗 ลิงก์พิกัดแผนที่ (Google Maps URL)</label>
+                    <input type="text" id="field-map-url" placeholder="เช่น https://goo.gl... (ถ้ามี)">
+                     <div class="form-group" style="margin-bottom:1rem">
+                    <label>📸 อัปโหลดรูปภาพหน้าร้าน</label>
+                    <input type="text" id="field-img-url" placeholder="วางลิงก์รูปภาพ หรือระบบจะใส่ภาพจำลองให้ (ถ้ามี)">
+                </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btn-cancel-editor">ยกเลิก</button>
+                    <button type="submit" class="btn-submit">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Popup ดูรายละเอียดสถานประกอบการตัวจริงที่ขาดหายไป -->
+    <div class="modal-overlay" id="view-details-popup">
+        <div class="modal-content" style="max-width: 550px; background: white; padding: 1.5rem; border-radius: 0.75rem;">
+            <h3 style="margin-bottom: 1.25rem; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">🔍 รายละเอียดสถานประกอบการ</h3>
+            <div id="view-details-content" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; font-size: 0.95rem; margin-bottom: 1.5rem; text-align: left; line-height: 1.6;">
+                <!-- ข้อมูลจะถูกฉีดเข้ามาด้วย JavaScript -->
+            </div>
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <button type="button" class="btn-cancel" id="btn-close-view" style="background-color: #1e293b; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600;">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. ค่าเริ่มต้นกรณีเปิดระบบครั้งแรก
+            var defaultData = [
+                { id: 1, status: 'normal', statusText: 'ใบอนุญาตปกติ', licenseNo: 'เลขที่ 123/2569', bizName: 'โรงสีข้าวเขาดินเจริญพาณิชย์', ownerName: 'นายสมชาย มั่นคง', typeText: 'สีข้าวด้วยเครื่องจักร', address: '45/1 หมู่ 2 ตำบลเขาดิน', expireDate: '31 ธ.ค. 2570', mapUrl: 'https://google.com', imgUrl: 'https://unsplash.com' },
+                { id: 2, status: 'warning', statusText: 'ใกล้หมดอายุ', licenseNo: 'เลขที่ 87/2566', bizName: 'ฟาร์มหมูผู้ใหญ่สมศักดิ์', ownerName: 'นายสมศักดิ์ รักดี', typeText: 'การเลี้ยงสุกร', address: '12 หมู่ 4 ตำบลเขาดิน', expireDate: '31 ธ.ค. 2569', mapUrl: '', imgUrl: '' },
+                { id: 3, status: 'danger', statusText: 'หมดอายุแล้ว', licenseNo: 'เลขที่ 05/2569', bizName: 'อู่ซ่อมรถยนต์สปีดเซอร์วิส', ownerName: 'นายวิชัย ยินดีเจริญ', typeText: 'อู่ซ่อมและพ่นสีรถยนต์', address: '9/3 หมู่ 1 ตำบลเขาดิน', expireDate: '31 ต.ค. 2569', mapUrl: '', imgUrl: '' }
+            ];
+
+            var localData = localStorage.getItem('bizDatabase');
+            if (!localData || localData === '') {
+                localStorage.setItem('bizDatabase', JSON.stringify(defaultData));
+                localData = JSON.stringify(defaultData);
+            }
+
+            var mockDatabase = JSON.parse(localData);
+            var selectedEditId = null;
+            var editorPopup = document.getElementById('data-editor-popup');
+            var viewPopup = document.getElementById('view-details-popup');
+            var cardsBox = document.getElementById('cards-list-box');
+            var dataForm = document.getElementById('editor-data-form');
+
+            function updateDashboardStats() {
+                document.getElementById('stat-normal-val').textContent = mockDatabase.filter(function(i) { return i.status === 'normal'; }).length + ' ราย';
+                document.getElementById('stat-warning-val').textContent = mockDatabase.filter(function(i) { return i.status === 'warning'; }).length + ' ราย';
+                document.getElementById('stat-danger-val').textContent = mockDatabase.filter(function(i) { return i.status === 'danger'; }).length + ' ราย';
+            }
+
+            // 2. ฟังก์ชันวาดการ์ดเวอร์ชันแกะสไตล์แยกส่วน บล็อกไม่ให้เครื่องหมายคำพูดขัดกันเด็ดขาด
+            function renderBusinessCards(dataList) {
+                if (!cardsBox) return;
+                cardsBox.innerHTML = '';
+                dataList.forEach(function(item) {
+                    // แยกตัวแปรเก็บลิงก์รูปภาพให้ปลอดภัยสูงสุด
+                    var imgBoxHtml = item.imgUrl 
+            ? '<div style="width:100%; height:160px; background-image: url(\'' + item.imgUrl + '\'); background-size: cover; background-position: center;"></div>'
+            : '<div style="width:100%; height:160px; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 0.85rem;">ไม่มีรูปภาพหน้าร้าน</div>';
+        var storeMap = item.mapUrl ? item.mapUrl : '';
+
+        var cardHTML = '<div class="biz-card" style="overflow:hidden; display:flex; flex-direction:column; background:white; border:1px solid #e2e8f0; border-radius:0.75rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">' +
+            imgBoxHtml +
+                        '<div style="padding:1.25rem; flex-grow:1; display:flex; flex-direction:column; justify-content:space-between;">' +
+                            '<div>' +
+                                '<div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">' +
+                                    '<span class="status-badge ' + item.status + '">' + item.statusText + '</span>' +
+                                    '<span style="font-size:0.8rem; color:var(--gray)">' + item.licenseNo + '</span>' +
+                                '</div>' +
+                                '<h4 style="margin-bottom:0.25rem">' + item.bizName + '</h4>' +
+                                '<p style="font-size:0.9rem; color:var(--gray); margin-bottom:0.5rem">ผู้ดำเนินกิจการ: ' + item.ownerName + '</p>' +
+                                '<div style="background:#f8fafc; padding:0.5rem; border-radius:0.25rem; font-size:0.85rem; margin-bottom:0.75rem">' +
+                                    '<p><strong>ประเภท:</strong> ' + item.typeText + '</p>' +
+                                    '<p><strong>ที่ตั้ง:</strong> ' + item.address + '</p>' +
+                                    '<p><strong>วันหมดอายุ:</strong> ' + item.expireDate + '</p>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.5rem;">' +
+                                (storeMap ? '<a href="' + storeMap + '" target="_blank" style="background:#f3e8ff; color:#6b21a8; padding:0.3rem 0.6rem; border-radius:0.25rem; text-decoration:none; font-size:0.85rem; font-weight:bold; margin-right:auto;">📍 แผนที่</a>' : '') +
+                                '<button class="btn-edit" data-id="' + item.id + '">✏️ แก้ไข</button>' +
+                                '<button class="btn-delete" data-id="' + item.id + '">🗑️ ลบ</button>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="card-footer">' +
+                            '<span>อัปเดตล่าสุด: 10 พ.ย. 2569</span>' +
+                            '<span class="btn-link btn-view-details" data-id="' + item.id + '" style="cursor:pointer">ดูรายละเอียด →</span>' +
+                        '</div>' +
+                    '</div>';
+                    cardsBox.insertAdjacentHTML('beforeend', cardHTML);
+                });
+            }
+            // 3. ระบบค้นหาข้อมูลตามหมู่และคำค้นหา
+            document.getElementById('btn-search-trigger').addEventListener('click', function() {
+                var searchVal = document.getElementById('main-search-input').value.trim().toLowerCase();
+                var villageVal = document.getElementById('main-village-select').value;
+                var filtered = mockDatabase.filter(function(item) {
+                    var matchText = !searchVal || item.bizName.toLowerCase().includes(searchVal) || item.ownerName.toLowerCase().includes(searchVal);
+                    var matchVillage = !villageVal || item.address.includes('หมู่ ' + villageVal) || item.address.includes('หมู่ที่ ' + villageVal);
+                    return matchText && matchVillage;
+                });
+                renderBusinessCards(filtered);
+            });
+
+            // 4. การจัดการปุ่มกดเปิด/ปิด ป๊อปอัปกรอกและแสดงข้อมูล (ล็อกระบบปุ่มปิดหน้าต่างให้ทำงานแม่นยำ)
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'btn-trigger-add') {
+                    selectedEditId = null;
+                    dataForm.reset();
+                    document.getElementById('editor-title-text').textContent = '➕ เพิ่มข้อมูลผู้ประกอบการใหม่';
+                    editorPopup.style.display = 'flex';
+                }
+                if (e.target && e.target.classList.contains('btn-edit')) {
+                    var id = parseInt(e.target.getAttribute('data-id'));
+                    var target = mockDatabase.find(function(i) { return i.id === id; });
+                    if (!target) return;
+                    selectedEditId = id;
+                    document.getElementById('editor-title-text').textContent = '✏️ แก้ไขข้อมูลผู้ประกอบการ';
+                    document.getElementById('field-doc-category').value = target.docCategory || 'ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ';
+                    document.getElementById('field-status').value = target.status;
+                    document.getElementById('field-lic-no').value = target.licenseNo;
+                    document.getElementById('field-biz-name').value = target.bizName;
+                    document.getElementById('field-owner-name').value = target.ownerName;
+                    document.getElementById('field-type').value = target.typeText;
+                    document.getElementById('field-address').value = target.address;
+                    document.getElementById('field-expire-date').value = target.expireDate;
+                    if(document.getElementById('field-map-url')) document.getElementById('field-map-url').value = target.mapUrl || '';
+                    if(document.getElementById('field-img-url')) document.getElementById('field-img-url').value = target.imgUrl || '';
+                    editorPopup.style.display = 'flex';
+                }
+                if (e.target && e.target.classList.contains('btn-delete')) {
+                    var deleteId = parseInt(e.target.getAttribute('data-id'));
+                    if (confirm('⚠️ ต้องการลบข้อมูลรายนี้ใช่หรือไม่?')) {
+                        mockDatabase = mockDatabase.filter(function(i) { return i.id !== deleteId; });
+                        localStorage.setItem('bizDatabase', JSON.stringify(mockDatabase));
+                        updateDashboardStats();
+                        renderBusinessCards(mockDatabase);
+                    }
+                }
+                if (e.target && e.target.id === 'btn-cancel-editor') {
+                    editorPopup.style.display = 'none';
+                }
+                if (e.target && e.target.classList.contains('btn-view-details')) {
+                    var viewId = parseInt(e.target.getAttribute('data-id'));
+                    var viewTarget = mockDatabase.find(function(i) { return i.id === viewId; });
+                    if (!viewTarget) return;
+
+                    var detailsBox = document.getElementById('view-details-content');
+                    if (detailsBox) {
+                        // 📸 สั่งให้ฉีดแท็กรูปภาพหน้าร้าน (img) เข้าไปแสดงผลด้านบนสุดของกล่องป๊อปอัปดูรายละเอียด
+                        var popImgHtml = viewTarget.imgUrl 
+                        ? '<div style="width:100%; height:200px; background:url(\'' + viewTarget.imgUrl + '\') center/cover no-repeat; border-radius:0.5rem; margin-bottom:1rem;"></div>' 
+                        : '';
+
+                    detailsBox.innerHTML = popImgHtml +
+                        '<p style="margin-bottom:0.5rem;"><strong>ประเภทเอกสาร:</strong> ' + (viewTarget.docCategory || 'ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ') + '</p>' +
+                        '<p style="margin-bottom:0.5rem;"><strong>สถานะใบอนุญาต:</strong> ' + viewTarget.statusText + '</p>' +
+                            '<p style="margin-bottom:0.5rem;"><strong>เลขที่ใบอนุญาต:</strong> ' + viewTarget.licenseNo + '</p>' +
+                            '<p style="margin-bottom:0.5rem;"><strong>ชื่อสถานประกอบการ:</strong> ' + viewTarget.bizName + '</p>' +
+                            '<p style="margin-bottom:0.5rem;"><strong>ผู้ดำเนินกิจการ:</strong> ' + viewTarget.ownerName + '</p>' +
+                            '<p style="margin-bottom:0.5rem;"><strong>ประเภทกิจการ:</strong> ' + viewTarget.typeText + '</p>' +
+                            '<p style="margin-bottom:0.5rem;"><strong>ที่ตั้งสถานประกอบการ:</strong> ' + viewTarget.address + '</p>' +
+                            '<p style="margin-bottom:0.5rem;"><strong>วันหมดอายุใบอนุญาต:</strong> ' + viewTarget.expireDate + '</p>';
+                    }
+                            
+                    if (viewPopup) viewPopup.style.display = 'flex';
+                }
+                if (e.target && e.target.id === 'btn-close-view') {
+                    if (viewPopup) viewPopup.style.display = 'none';
+                }
+            });
+
+            // 5. ระบบส่งฟอร์มบันทึกค่าลงฐานข้อมูลเครื่องถาวร (รวมพิกัดแผนที่และลิงก์รูปภาพ)
+            dataForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var statusVal = document.getElementById('field-status').value;
+                var statusTextVal = document.getElementById('field-status').options[document.getElementById('field-status').selectedIndex].text;
+                var mapUrlVal = document.getElementById('field-map-url') ? document.getElementById('field-map-url').value.trim() : '';
+                var imgUrlVal = document.getElementById('field-img-url') ? document.getElementById('field-img-url').value.trim() : '';
+
+                if (selectedEditId) {
+                    var item = mockDatabase.find(function(i) { return i.id === selectedEditId; });
+                    if (item) {
+                        item.status = statusVal;
+                        item.statusText = statusTextVal;
+                        item.licenseNo = document.getElementById('field-lic-no').value;
+                        item.bizName = document.getElementById('field-biz-name').value;
+                        item.ownerName = document.getElementById('field-owner-name').value;
+                        item.typeText = document.getElementById('field-type').value;
+                        item.address = document.getElementById('field-address').value;
+                        item.expireDate = document.getElementById('field-expire-date').value;
+                        item.mapUrl = mapUrlVal;
+                        item.imgUrl = imgUrlVal;
+                    }
+                } else {
+                    // ส่งข้อมูลเพิ่มใหม่ไปยัง Google Sheets ผ่าน Server API
+                    var newPayload = {
+                        status: statusVal,
+                        statusText: statusTextVal,
+                        licenseNo: document.getElementById('field-lic-no').value,
+                        bizName: document.getElementById('field-biz-name').value,
+                        ownerName: document.getElementById('field-owner-name').value,
+                        typeText: document.getElementById('field-type').value,
+                        address: document.getElementById('field-address').value,
+                        expireDate: document.getElementById('field-expire-date').value,
+                        mapUrl: mapUrlVal,
+                        imgUrl: imgUrlVal
+                    };
+                    fetch('/api/businesses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+                        body: JSON.stringify(newPayload)
+                    }).then(function() { loadFromGoogleSheets(); });
+                }
+                editorPopup.style.display = 'none';
+            });
+
+            // 6. ฟังก์ชันจำกัดสิทธิ์โหมดคนนอกเปิดดูอย่างเดียว (Viewer Mode)
+            function applyViewMode() {
+                var urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('mode') === 'view' || window.location.href.indexOf('mode=view') !== -1) {
+                    var addBtn = document.getElementById('btn-trigger-add');
+                    if (addBtn) addBtn.style.display = 'none';
+
+                    var disableStyle = document.createElement('style');
+                    disableStyle.innerHTML = '.btn-edit, .btn-delete, #btn-trigger-add { display: none !important; }';
+                    document.head.appendChild(disableStyle);
+                }
+            }
+
+            // 7. ฟังก์ชันดึงข้อมูลจริงจาก Google Sheets
+            function loadFromGoogleSheets() {
+                fetch('/api/businesses')
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (Array.isArray(data)) {
+                            mockDatabase = data;
+                            updateDashboardStats();
+                            renderBusinessCards(mockDatabase);
+                            applyViewMode();
+                        }
+                    })
+                    .catch(function(err) { console.error('โหลดข้อมูลไม่สำเร็จ:', err); });
+            }
+
+            // สั่งดึงข้อมูลจาก Google Sheets ทันทีที่เปิดหน้าเว็บ
+            loadFromGoogleSheets();
+
+            var originalRender = renderBusinessCards;
+            renderBusinessCards = function(dataList) {
+                originalRender(dataList);
+                applyViewMode();
+            };
+        });
+    </script>
+</body>
+</html>
