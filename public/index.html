@@ -76,21 +76,27 @@
             color: #4b5563; 
             line-height: 1.6;
         }
+        body:not(.is-admin) .btn-edit,
+        body:not(.is-admin) .btn-delete,
+        body:not(.is-admin) #btn-trigger-add {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
     <div class="header-bg">
         <div style="display: flex; align-items: center; gap: 1.5rem; max-width: 1200px; margin: 0 auto;">
             <!-- ส่วนรูปตราหน่วยงาน -->
-            <img src="/logo.png" alt="ตราหน่วยงาน" style="width: 75px; height: 75px; object-fit: contain; background: white; padding: 4px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <img src="/logo.png" alt="ตราหน่วยงาน" style="width: 75px; height: 75px; object-fit: contain; background: white; padding: 4px; border-radius: 50%;">
             <div>
-                 <h1>ระบบฐานข้อมูลผู้ประกอบกิจการตาม พรบ.การสาธารณสุข พ.ศ. 2535</h1>
-                <!-- ปรับขนาดชื่อ อบต. ให้ใหญ่ขึ้นและหนาขึ้นเด่นๆ -->
+                <h1>ระบบฐานข้อมูลผู้ประกอบกิจการตาม พรบ.การสาธารณสุข พ.ศ. 2535</h1>
                 <p style="color: #93c5fd; font-size: 1.2rem; font-weight: 600; margin-top: 0.25rem;">อบต.เขาดิน อำเภอบางปะกง จังหวัดฉะเชิงเทรา</p>
+            </div>
+            <div style="margin-left: auto;">
+                <button type="button" id="btn-admin-auth" onclick="toggleAdminAuth()" style="background-color:#2563eb; color:white; border:none; padding:0.6rem 1.2rem; border-radius:0.5rem; font-weight:bold; cursor:pointer; font-size:0.9rem; box-shadow:0 2px 4px rgba(0,0,0,0.2);">🔐 เข้าสู่ระบบเจ้าหน้าที่</button>
             </div>
         </div>
     </div>
-
     <div class="container">
         <div class="search-box">
             <div class="search-grid">
@@ -496,20 +502,65 @@
                             mockDatabase = data;
                             updateDashboardStats();
                             renderBusinessCards(mockDatabase);
-                            applyViewMode();
+                            checkAdminStatus();
                         }
                     })
                     .catch(function(err) { console.error('โหลดข้อมูลไม่สำเร็จ:', err); });
             }
+ // 🔐 ฟังก์ชันตรวจสอบสถานะการล็อกอินของเจ้าหน้าที่
+            function checkAdminStatus() {
+                var btn = document.getElementById('btn-admin-auth');
+                if (sessionStorage.getItem('khaodin_admin') === 'true') {
+                    document.body.classList.add('is-admin');
+                    if (btn) {
+                        btn.textContent = '🚪 ออกจากระบบเจ้าหน้าที่';
+                        btn.style.backgroundColor = '#dc2626';
+                    }
+                } else {
+                    document.body.classList.remove('is-admin');
+                    if (btn) {
+                        btn.textContent = '🔐 เข้าสู่ระบบเจ้าหน้าที่';
+                        btn.style.backgroundColor = '#2563eb';
+                    }
+                }
+            }
 
-            // สั่งดึงข้อมูลจาก Google Sheets ทันทีที่เปิดหน้าเว็บ
-            loadFromGoogleSheets();
+            // 🔑 ฟังก์ชันกดปุ่มเข้าสู่ระบบ / ออกจากระบบ
+            window.toggleAdminAuth = function() {
+                if (sessionStorage.getItem('khaodin_admin') === 'true') {
+                    if (confirm('ต้องการออกจากระบบเจ้าหน้าที่ใช่หรือไม่?')) {
+                        sessionStorage.removeItem('khaodin_admin');
+                        checkAdminStatus();
+                    }
+                    return;
+                }
 
-            var originalRender = renderBusinessCards;
-            renderBusinessCards = function(dataList) {
-                originalRender(dataList);
-                applyViewMode();
+                var user = prompt('👤 กรุณากรอกชื่อผู้ใช้งาน (Username):');
+                if (!user) return;
+                var pass = prompt('🔑 กรุณากรอกรหัสผ่าน (Password):');
+                if (!pass) return;
+
+                fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user.trim(), password: pass.trim() })
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        sessionStorage.setItem('khaodin_admin', 'true');
+                        checkAdminStatus();
+                        alert('✅ เข้าสู่ระบบเจ้าหน้าที่สำเร็จ!');
+                    } else {
+                        alert('❌ ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+                    }
+                })
+                .catch(function() { alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์'); });
             };
+
+            // สั่งดึงข้อมูลและตรวจสอบสิทธิ์ทันทีที่เปิดหน้าเว็บ
+            loadFromGoogleSheets();
+            checkAdminStatus();
         });
     </script>
 </body>
