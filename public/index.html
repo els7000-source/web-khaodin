@@ -575,6 +575,46 @@
             };
 
             // สั่งดึงข้อมูลและตรวจสอบสิทธิ์ทันทีที่เปิดหน้าเว็บ
+            // 📝 จัดการการส่งแบบฟอร์มคำขอของประชาชน
+var reqForm = document.getElementById('citizen-request-form');
+if (reqForm) {
+    reqForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var submitBtn = document.getElementById('btn-submit-req');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'กำลังส่งข้อมูล...';
+
+        var payload = {
+            docCategory: document.getElementById('req-doc-category').value,
+            bizName: document.getElementById('req-biz-name').value.trim(),
+            ownerName: document.getElementById('req-owner-name').value.trim(),
+            phone: document.getElementById('req-phone').value.trim(),
+            typeText: document.getElementById('req-type').value.trim(),
+            address: document.getElementById('req-address').value.trim()
+        };
+
+        fetch('/api/requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                alert('✅ ส่งคำขอเรียบร้อยแล้ว! เจ้าหน้าที่กองสาธารณสุข อบต.เขาดิน จะตรวจสอบและติดต่อกลับตามเบอร์โทรศัพท์ที่แจ้งไว้');
+                reqForm.reset();
+                document.getElementById('request-popup').style.display = 'none';
+            } else {
+                alert('❌ ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+            }
+        })
+        .catch(function() { alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบ'); })
+        .finally(function() {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'ส่งคำขอออนไลน์';
+        });
+    });
+}
             loadFromGoogleSheets();
             checkAdminStatus();
         });
