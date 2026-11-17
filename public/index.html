@@ -340,15 +340,31 @@
             }
             // 3. ระบบค้นหาข้อมูลตามหมู่และคำค้นหา
             document.getElementById('btn-search-trigger').addEventListener('click', function() {
-                var searchVal = document.getElementById('main-search-input').value.trim().toLowerCase();
-                var villageVal = document.getElementById('main-village-select').value;
-                var filtered = mockDatabase.filter(function(item) {
-                    var matchText = !searchVal || item.bizName.toLowerCase().includes(searchVal) || item.ownerName.toLowerCase().includes(searchVal);
-                    var matchVillage = !villageVal || item.address.includes('หมู่ ' + villageVal) || item.address.includes('หมู่ที่ ' + villageVal);
-                    return matchText && matchVillage;
-                });
-                renderBusinessCards(filtered);
-            });
+    var keyword = document.getElementById('main-search-input').value.trim().toLowerCase();
+    var village = document.getElementById('main-village-select').value;
+    var docCat = document.getElementById('main-doc-category-select').value;
+
+    var filtered = mockDatabase.filter(function(item) {
+        var matchKeyword = !keyword || 
+            (item.bizName && item.bizName.toLowerCase().indexOf(keyword) !== -1) ||
+            (item.ownerName && item.ownerName.toLowerCase().indexOf(keyword) !== -1) ||
+            (item.licenseNo && item.licenseNo.toLowerCase().indexOf(keyword) !== -1);
+
+        // รองรับทั้งคำว่า "หมู่ 7" และ "หมู่ที่ 7" โดยดึงเฉพาะตัวเลขหมู่มาเทียบ
+        var villageNum = village.replace(/[^0-9]/g, '');
+        var matchVillage = !village || (item.address && (
+            item.address.indexOf('หมู่ ' + villageNum) !== -1 || 
+            item.address.indexOf('หมู่ที่ ' + villageNum) !== -1 ||
+            item.address.indexOf('ม.' + villageNum) !== -1
+        ));
+
+        var matchDocCat = !docCat || (item.docCategory === docCat);
+
+        return matchKeyword && matchVillage && matchDocCat;
+    });
+
+    renderBusinessCards(filtered);
+});
 
             // 4. การจัดการปุ่มกดเปิด/ปิด ป๊อปอัปกรอกและแสดงข้อมูล (ล็อกระบบปุ่มปิดหน้าต่างให้ทำงานแม่นยำ)
             document.addEventListener('click', function(e) {
