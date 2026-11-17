@@ -427,23 +427,32 @@
                 var mapUrlVal = document.getElementById('field-map-url') ? document.getElementById('field-map-url').value.trim() : '';
                 var imgUrlVal = document.getElementById('field-img-url') ? document.getElementById('field-img-url').value.trim() : '';
 
-                if (selectedEditId) {
-                    var item = mockDatabase.find(function(i) { return i.id === selectedEditId; });
-                    if (item) {
-                        item.status = statusVal;
-                        item.statusText = statusTextVal;
-                        item.licenseNo = document.getElementById('field-lic-no').value;
-                        item.bizName = document.getElementById('field-biz-name').value;
-                        item.ownerName = document.getElementById('field-owner-name').value;
-                        item.typeText = document.getElementById('field-type').value;
-                        item.address = document.getElementById('field-address').value;
-                        item.expireDate = document.getElementById('field-expire-date').value;
-                        item.mapUrl = mapUrlVal;
-                        item.imgUrl = imgUrlVal;
-                    }
+                 if (selectedEditId) {
+                    var editPayload = {
+                        docCategory: document.getElementById('field-doc-category').value,
+                        status: statusVal,
+                        statusText: statusTextVal,
+                        licenseNo: document.getElementById('field-lic-no').value,
+                        bizName: document.getElementById('field-biz-name').value,
+                        ownerName: document.getElementById('field-owner-name').value,
+                        typeText: document.getElementById('field-type').value,
+                        address: document.getElementById('field-address').value,
+                        expireDate: document.getElementById('field-expire-date').value,
+                        mapUrl: mapUrlVal,
+                        imgUrl: imgUrlVal
+                    };
+
+                    fetch('/api/businesses/' + encodeURIComponent(selectedEditId), {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+                        body: JSON.stringify(editPayload)
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function() { loadFromGoogleSheets(); })
+                    .catch(function(err) { console.error('แก้ไขข้อมูลไม่สำเร็จ:', err); });
                 } else {
-                    // ส่งข้อมูลเพิ่มใหม่ไปยัง Google Sheets ผ่าน Server API
                     var newPayload = {
+                        docCategory: document.getElementById('field-doc-category').value,
                         status: statusVal,
                         statusText: statusTextVal,
                         licenseNo: document.getElementById('field-lic-no').value,
@@ -460,7 +469,8 @@
                         headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
                         body: JSON.stringify(newPayload)
                     }).then(function() { loadFromGoogleSheets(); });
-                }
+                 } // 
+
                 editorPopup.style.display = 'none';
             });
 
