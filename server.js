@@ -8,7 +8,7 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-TN3kLWLNR2
 
 const upload = multer({ dest: 'uploads/' });
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 🔒 API เข้าสู่ระบบเจ้าหน้าที่

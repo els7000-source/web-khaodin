@@ -575,7 +575,7 @@ if (reqForm) {
                     e.preventDefault();
                     var submitBtn = document.getElementById('btn-submit-req');
                     var fileInput = document.getElementById('req-file-input');
-                    var file = fileInput && fileInput.files ? fileInput.files[0] : null;
+                    var file = (fileInput && fileInput.files && fileInput.files.length > 0) ? fileInput.files[0] : null;
 
                     if (file && file.size > 5 * 1024 * 1024) {
                         alert('❌ ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB ครับ');
