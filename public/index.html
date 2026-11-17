@@ -247,9 +247,10 @@
                     <input type="text" id="req-type" placeholder="เช่น ร้านอาหารตามสั่ง, อู่ซ่อมรถยนต์" required>
                 </div>
                 <div class="form-group" style="margin-bottom:1.25rem;">
-                    <label>ที่ตั้งสถานประกอบการ (บ้านเลขที่ / หมู่ที่) *</label>
-                    <input type="text" id="req-address" placeholder="เช่น 99/1 หมู่ 7 ต.เขาดิน" required>
-                </div>
+                <label>แนบสำเนาบัตรประชาชน / เอกสารประกอบ (ไฟล์รูปภาพ JPG, PNG) *</label>
+                <input type="file" id="req-file-input" accept="image/*" required style="padding:0.4rem; background:#f8fafc;">
+                <small style="color:#64748b; font-size:0.75rem; display:block; margin-top:0.25rem;">* แนะนำให้ขีดคร่อม "ใช้สำหรับยื่นขอใบอนุญาต อบต.เขาดิน เท่านั้น" ก่อนถ่ายรูป</small>
+            </div>
 
                 <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
                     <button type="button" onclick="document.getElementById('request-popup').style.display='none'" style="background:#e2e8f0; color:#1e293b; border:none; padding:0.65rem 1.25rem; border-radius:0.5rem; font-weight:bold; cursor:pointer;">ยกเลิก</button>
@@ -568,46 +569,75 @@
             // 📝 จัดการการส่งแบบฟอร์มคำขอของประชาชน
 var reqForm = document.getElementById('citizen-request-form');
 if (reqForm) {
-    reqForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var submitBtn = document.getElementById('btn-submit-req');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'กำลังส่งข้อมูล...';
+    var reqForm = document.getElementById('citizen-request-form');
+            if (reqForm) {
+                reqForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    var submitBtn = document.getElementById('btn-submit-req');
+                    var fileInput = document.getElementById('req-file-input');
+                    var file = fileInput && fileInput.files ? fileInput.files[0] : null;
 
-        var payload = {
-            docCategory: document.getElementById('req-doc-category').value,
-            bizName: document.getElementById('req-biz-name').value.trim(),
-            ownerName: document.getElementById('req-owner-name').value.trim(),
-            phone: document.getElementById('req-phone').value.trim(),
-            typeText: document.getElementById('req-type').value.trim(),
-            address: document.getElementById('req-address').value.trim()
-        };
+                    if (file && file.size > 5 * 1024 * 1024) {
+                        alert('❌ ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB ครับ');
+                        return;
+                    }
 
-        fetch('/api/requests', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            if (data.success) {
-                alert('✅ ส่งคำขอเรียบร้อยแล้ว! เจ้าหน้าที่กองสาธารณสุข อบต.เขาดิน จะตรวจสอบและติดต่อกลับตามเบอร์โทรศัพท์ที่แจ้งไว้');
-                reqForm.reset();
-                document.getElementById('request-popup').style.display = 'none';
-            } else {
-                alert('❌ ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
-            }
-        })
-        .catch(function() { alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบ'); })
-        .finally(function() {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'ส่งคำขอออนไลน์';
-        });
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'กำลังอัปโหลดเอกสารและส่งข้อมูล...';
+
+                    function sendRequestData(fileData) {
+                        var payload = {
+                            docCategory: document.getElementById('req-doc-category').value,
+                            bizName: document.getElementById('req-biz-name').value.trim(),
+                            ownerName: document.getElementById('req-owner-name').value.trim(),
+                            phone: document.getElementById('req-phone').value.trim(),
+                            typeText: document.getElementById('req-type').value.trim(),
+                            address: document.getElementById('req-address').value.trim(),
+                            fileBase64: fileData ? fileData.base64 : '',
+                            fileName: fileData ? fileData.name : '',
+                            fileMimeType: fileData ? fileData.type : ''
+                        };
+
+                        fetch('/api/requests', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
+                            if (data.success) {
+                                alert('✅ ส่งคำขอและเอกสารแนบเรียบร้อยแล้ว! เจ้าหน้าที่กองสาธารณสุข อบต.เขาดิน จะตรวจสอบและติดต่อกลับครับ');
+                                reqForm.reset();
+                                document.getElementById('request-popup').style.display = 'none';
+                            } else {
+                                alert('❌ ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+                            }
+                        })
+                        .catch(function() { alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบ'); })
+                        .finally(function() {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'ส่งคำขอออนไลน์';
+                        });
+                    }
+
+                    if (file) {
+                        var reader = new FileReader();
+                        reader.onload = function(evt) {
+                            var base64Str = evt.target.result.split(',')[1];
+                            sendRequestData({ base64: base64Str, name: file.name, type: file.type });
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                    sendRequestData(null);
+                }
+            });
+        }
+        loadFromGoogleSheets();
+        checkAdminStatus();
+        }
+        loadFromGoogleSheets();
+        checkAdminStatus();
     });
-}
-            loadFromGoogleSheets();
-            checkAdminStatus();
-        });
-    </script>
+</script>
 </body>
 </html>
