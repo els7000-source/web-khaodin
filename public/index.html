@@ -246,6 +246,10 @@
                     <label>ประเภทกิจการ / ลักษณะการประกอบการ *</label>
                     <input type="text" id="req-type" placeholder="เช่น ร้านอาหารตามสั่ง, อู่ซ่อมรถยนต์" required>
                 </div>
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label>ที่ตั้งสถานประกอบการ (บ้านเลขที่ / หมู่ที่) *</label>
+                    <input type="text" id="req-address" placeholder="เช่น 99/1 หมู่ 7 ต.เขาดิน" required>
+                </div>
                 <div class="form-group" style="margin-bottom:1.25rem;">
                 <label>แนบสำเนาบัตรประชาชน / เอกสารประกอบ (ไฟล์รูปภาพ JPG, PNG) *</label>
                 <input type="file" id="req-file-input" accept="image/*" required style="padding:0.4rem; background:#f8fafc;">
@@ -568,8 +572,6 @@
             // สั่งดึงข้อมูลและตรวจสอบสิทธิ์ทันทีที่เปิดหน้าเว็บ
             // 📝 จัดการการส่งแบบฟอร์มคำขอของประชาชน
 var reqForm = document.getElementById('citizen-request-form');
-if (reqForm) {
-    var reqForm = document.getElementById('citizen-request-form');
             if (reqForm) {
                 reqForm.addEventListener('submit', function(e) {
                     e.preventDefault();
@@ -623,21 +625,18 @@ if (reqForm) {
                     if (file) {
                         var reader = new FileReader();
                         reader.onload = function(evt) {
-                            var base64Str = evt.target.result.split(',')[1];
+                            var base64Str = evt.target.result.split(',').pop();
                             sendRequestData({ base64: base64Str, name: file.name, type: file.type });
                         };
                         reader.readAsDataURL(file);
                     } else {
                     sendRequestData(null);
                 }
-            });
-        }
+                });
+            }
         loadFromGoogleSheets();
         checkAdminStatus();
-        }
-        loadFromGoogleSheets();
-        checkAdminStatus();
-    });
+        });        
 </script>
 </body>
 </html>
