@@ -7,7 +7,6 @@ const PORT = process.env.PORT || 3000;
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-TN3kLWLNR20gHH3fnfTn2jcgecb-OkjWLq0phd5BQQj9uCgVu_T7Yy3ZfnB12KrC/exec';
 
 const upload = multer({ dest: 'uploads/' });
-const upload = multer({ dest: 'uploads/' });
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
