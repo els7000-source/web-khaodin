@@ -134,9 +134,12 @@
             <div class="stat-card danger"><div>หมดอายุแล้ว</div><div class="stat-value" id="stat-danger-val" style="color:var(--danger)">0 ราย</div></div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin: 2rem 0 1rem 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin: 2rem 0 1rem 0;">
             <h3>📋 รายชื่อสถานประกอบการล่าสุด</h3>
-            <button class="btn-add" id="btn-trigger-add">+ เพิ่มผู้ประกอบการใหม่</button>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button type="button" onclick="document.getElementById('request-popup').style.display='flex'" style="background-color:#0284c7; color:white; border:none; padding:0.6rem 1.2rem; border-radius:0.375rem; font-weight:600; cursor:pointer;">📝 ยื่นคำขอใบอนุญาต / หนังสือรับรอง</button>
+                <button class="btn-add" id="btn-trigger-add">+ เพิ่มผู้ประกอบการใหม่</button>
+            </div>
         </div>
 
         <div class="grid-cards" id="cards-list-box"></div>
@@ -212,60 +215,47 @@
             </div>
         </div>
     </div>
-
-    <!-- Popup ฟอร์มเพิ่ม/แก้ไขข้อมูล -->
-    <div class="modal-overlay" id="<h4>⏰ เวลาทำการ</h4>data-editor-popup">
-        <div class="modal-content">
-            <h3 id="editor-title-text" style="margin-bottom:1rem">➕ เพิ่มข้อมูลผู้ประกอบการใหม่</h3>
-            <form id="editor-data-form">
-                <div class="form-group" style="margin-bottom:0.75rem">
-                    <div class="form-group">
-    <label>ประเภทใบอนุญาต / หนังสือรับรอง</label>
-    <select id="field-doc-category">
-        <option value="ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ">ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ</option>
-        <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร</option>
-        <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร</option>
-    </select>
-</div>
-                    <label>สถานะใบอนุญาต</label>
-                    <select id="field-status">
-                        <option value="normal">ใบอนุญาตปกติ</option>
-                        <option value="warning">ใกล้หมดอายุ</option>
-                        <option value="danger">หมดอายุแล้ว</option>
+<!-- 3. ป๊อปอัปสำหรับประชาชนยื่นคำขอใบอนุญาต / หนังสือรับรอง -->
+    <div id="request-popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:white; padding:1.75rem; border-radius:1rem; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="color:#0369a1; margin-bottom:0.25rem;">📝 ยื่นคำขอรับใบอนุญาต / หนังสือรับรอง</h3>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:1rem;">กรอกข้อมูลเบื้องต้นเพื่อให้เจ้าหน้าที่กองสาธารณสุข อบต.เขาดิน ติดต่อกลับ</p>
+            
+            <form id="citizen-request-form">
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label>ประเภทเอกสารที่ต้องการยื่นขอ *</label>
+                    <select id="req-doc-category" required>
+                        <option value="ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ">ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ</option>
+                        <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร</option>
+                        <option value="หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร">หนังสือรับรองการแจ้งจัดตั้งสถานที่สะสมอาหาร</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin-bottom:0.75rem"><label>เลขที่ใบอนุญาต</label><input type="text" id="field-lic-no" required></div>
-                <div class="form-group" style="margin-bottom:0.75rem"><label>ชื่อสถานประกอบการ</label><input type="text" id="field-biz-name" required></div>
-                <div class="form-group" style="margin-bottom:0.75rem"><label>ผู้ดำเนินกิจการ</label><input type="text" id="field-owner-name" required></div>
-                <div class="form-group" style="margin-bottom:0.75rem"><label>ประเภทกิจการ</label><input type="text" id="field-type" placeholder="เช่น อู่ซ่อมรถ, โรงสีข้าว" required></div>
-                <div class="form-group" style="margin-bottom:0.75rem"><label>ที่ตั้ง (รายละเอียด/หมู่ที่)</label><input type="text" id="field-address" placeholder="เช่น 45/1 หมู่ 2 ตำบลเขาดิน" required></div>
-                <div class="form-group" style="margin-bottom:1rem"><label>วันหมดอายุใบอนุญาต</label><input type="text" id="field-expire-date" placeholder="เช่น 31 ธ.ค. 2570" required></div>
-                <div class="form-group" style="margin-bottom:1rem">
-                    <label>🔗 ลิงก์พิกัดแผนที่ (Google Maps URL)</label>
-                    <input type="text" id="field-map-url" placeholder="เช่น https://goo.gl... (ถ้ามี)">
-                     <div class="form-group" style="margin-bottom:1rem">
-                    <label>📸 อัปโหลดรูปภาพหน้าร้าน</label>
-                    <input type="text" id="field-img-url" placeholder="วางลิงก์รูปภาพ หรือระบบจะใส่ภาพจำลองให้ (ถ้ามี)">
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label>ชื่อสถานประกอบการ / ชื่อร้าน *</label>
+                    <input type="text" id="req-biz-name" placeholder="เช่น ร้านก๋วยเตี๋ยวป้าแดง" required>
                 </div>
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label>ชื่อ-นามสกุล ผู้ยื่นคำขอ (เจ้าของกิจการ) *</label>
+                    <input type="text" id="req-owner-name" placeholder="ระบุชื่อ-นามสกุล" required>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="btn-cancel-editor">ยกเลิก</button>
-                    <button type="submit" class="btn-submit">บันทึกข้อมูล</button>
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label>เบอร์โทรศัพท์ติดต่อกลับ *</label>
+                    <input type="tel" id="req-phone" placeholder="เช่น 081-234-5678" required>
+                </div>
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <label>ประเภทกิจการ / ลักษณะการประกอบการ *</label>
+                    <input type="text" id="req-type" placeholder="เช่น ร้านอาหารตามสั่ง, อู่ซ่อมรถยนต์" required>
+                </div>
+                <div class="form-group" style="margin-bottom:1.25rem;">
+                    <label>ที่ตั้งสถานประกอบการ (บ้านเลขที่ / หมู่ที่) *</label>
+                    <input type="text" id="req-address" placeholder="เช่น 99/1 หมู่ 7 ต.เขาดิน" required>
+                </div>
+
+                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('request-popup').style.display='none'" style="background:#e2e8f0; color:#1e293b; border:none; padding:0.65rem 1.25rem; border-radius:0.5rem; font-weight:bold; cursor:pointer;">ยกเลิก</button>
+                    <button type="submit" id="btn-submit-req" style="background:#0284c7; color:white; border:none; padding:0.65rem 1.5rem; border-radius:0.5rem; font-weight:bold; cursor:pointer;">ส่งคำขอออนไลน์</button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <!-- Popup ดูรายละเอียดสถานประกอบการตัวจริงที่ขาดหายไป -->
-    <div class="modal-overlay" id="view-details-popup">
-        <div class="modal-content" style="max-width: 550px; background: white; padding: 1.5rem; border-radius: 0.75rem;">
-            <h3 style="margin-bottom: 1.25rem; color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">🔍 รายละเอียดสถานประกอบการ</h3>
-            <div id="view-details-content" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; font-size: 0.95rem; margin-bottom: 1.5rem; text-align: left; line-height: 1.6;">
-                <!-- ข้อมูลจะถูกฉีดเข้ามาด้วย JavaScript -->
-            </div>
-            <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-                <button type="button" class="btn-cancel" id="btn-close-view" style="background-color: #1e293b; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.375rem; cursor: pointer; font-weight: 600;">ปิดหน้าต่าง</button>
-            </div>
         </div>
     </div>
 
