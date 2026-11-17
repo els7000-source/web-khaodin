@@ -4,7 +4,6 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// https://script.google.com/macros/s/AKfycbz-TN3kLWLNR20gHH3fnfTn2jcgecb-OkjWLq0phd5BQQj9uCgVu_T7Yy3ZfnB12KrC/exec
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-TN3kLWLNR20gHH3fnfTn2jcgecb-OkjWLq0phd5BQQj9uCgVu_T7Yy3ZfnB12KrC/exec';
 
 const upload = multer({ dest: 'uploads/' });
@@ -88,5 +87,24 @@ app.delete('/api/businesses/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
+// 📝 รับคำขอใบอนุญาต/หนังสือรับรองจากประชาชน
+app.post('/api/requests', async (req, res) => {
+    try {
+        const item = {
+            id: 'REQ-' + Date.now(),
+            requestDate: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }),
+            status: 'รอเจ้าหน้าที่ตรวจสอบ',
+            ...req.body
+        };
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'request', data: item })
+        });
+        const result = await response.json();
+        res.status(201).json({ success: true, result });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
