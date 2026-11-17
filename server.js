@@ -101,10 +101,10 @@ app.post('/api/requests', async (req, res) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'request', data: item })
         });
-        const result = await response.json();
-        res.status(201).json({ success: true, result });
+        const textResult = await response.text();
+        res.status(201).json({ success: true, result: textResult });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
