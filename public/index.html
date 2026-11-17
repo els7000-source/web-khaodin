@@ -371,14 +371,21 @@
                     editorPopup.style.display = 'flex';
                 }
                 if (e.target && e.target.classList.contains('btn-delete')) {
-                    var deleteId = parseInt(e.target.getAttribute('data-id'));
-                    if (confirm('⚠️ ต้องการลบข้อมูลรายนี้ใช่หรือไม่?')) {
-                        mockDatabase = mockDatabase.filter(function(i) { return i.id !== deleteId; });
-                        localStorage.setItem('bizDatabase', JSON.stringify(mockDatabase));
-                        updateDashboardStats();
-                        renderBusinessCards(mockDatabase);
-                    }
-                }
+            var deleteId = e.target.getAttribute('data-id');
+            if (confirm('⚠️ ต้องการลบข้อมูลรายนี้ถาวรใช่หรือไม่?')) {
+                mockDatabase = mockDatabase.filter(function(i) { return String(i.id) !== String(deleteId); });
+                updateDashboardStats();
+                renderBusinessCards(mockDatabase);
+
+                fetch('/api/businesses/' + encodeURIComponent(deleteId), {
+                    method: 'DELETE',
+                    headers: { 'x-user-role': 'admin' }
+                })
+                .then(function(res) { return res.json(); })
+                .then(function() { loadFromGoogleSheets(); })
+                .catch(function(err) { console.error('ลบข้อมูลไม่สำเร็จ:', err); });
+            }
+        }
                 if (e.target && e.target.id === 'btn-cancel-editor') {
                     editorPopup.style.display = 'none';
                 }
